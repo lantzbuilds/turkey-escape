@@ -57,29 +57,127 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateSprites(): void {
-    // Create Turkey sprite
+    // Create Turkey sprite with tail feathers and wattle
     const turkeyGraphics = this.make.graphics({});
+
+    // Tail feathers (fan shape) - multiple colors
+    turkeyGraphics.fillStyle(0x8B4513, 1); // Brown feather
+    turkeyGraphics.fillTriangle(5, 25, 0, 5, 12, 20);
+    turkeyGraphics.fillStyle(0xD2691E, 1); // Chocolate feather
+    turkeyGraphics.fillTriangle(8, 25, 5, 2, 15, 18);
+    turkeyGraphics.fillStyle(0xCD853F, 1); // Peru feather
+    turkeyGraphics.fillTriangle(11, 25, 10, 0, 18, 17);
+    turkeyGraphics.fillStyle(0xD2691E, 1); // Chocolate feather
+    turkeyGraphics.fillTriangle(14, 25, 15, 2, 21, 18);
+    turkeyGraphics.fillStyle(0x8B4513, 1); // Brown feather
+    turkeyGraphics.fillTriangle(17, 25, 20, 5, 24, 20);
+
+    // Body (round)
     turkeyGraphics.fillStyle(0x8B4513, 1); // Brown body
-    turkeyGraphics.fillRect(0, 10, 30, 20);
-    turkeyGraphics.fillStyle(0xFF6347, 1); // Red head
-    turkeyGraphics.fillCircle(25, 15, 8);
-    turkeyGraphics.fillStyle(0xFFD700, 1); // Yellow beak
-    turkeyGraphics.fillTriangle(30, 15, 35, 12, 35, 18);
-    turkeyGraphics.generateTexture('turkey', 40, 40);
+    turkeyGraphics.fillCircle(25, 28, 12);
+
+    // Head
+    turkeyGraphics.fillStyle(0x8B4513, 1); // Brown head
+    turkeyGraphics.fillCircle(36, 20, 7);
+
+    // Eye
+    turkeyGraphics.fillStyle(0x000000, 1);
+    turkeyGraphics.fillCircle(38, 18, 2);
+    turkeyGraphics.fillStyle(0xFFFFFF, 1);
+    turkeyGraphics.fillCircle(38, 17, 1);
+
+    // Beak
+    turkeyGraphics.fillStyle(0xFFA500, 1); // Orange beak
+    turkeyGraphics.fillTriangle(42, 20, 48, 18, 42, 23);
+
+    // Wattle (red dangly bit under beak)
+    turkeyGraphics.fillStyle(0xFF0000, 1); // Bright red
+    turkeyGraphics.fillCircle(42, 26, 4);
+    turkeyGraphics.fillCircle(40, 29, 3);
+
+    // Snood (red bit on top of beak)
+    turkeyGraphics.fillStyle(0xFF0000, 1);
+    turkeyGraphics.fillCircle(43, 16, 2);
+
+    // Legs
+    turkeyGraphics.fillStyle(0xFFA500, 1); // Orange legs
+    turkeyGraphics.fillRect(22, 38, 3, 8);
+    turkeyGraphics.fillRect(28, 38, 3, 8);
+
+    turkeyGraphics.generateTexture('turkey', 50, 48);
     turkeyGraphics.destroy();
 
-    // Create Farmer sprite
+    // Create Farmer sprite with axe
     const farmerGraphics = this.make.graphics({});
-    farmerGraphics.fillStyle(0xFFDDB3, 1); // Skin tone head
+
+    // Axe handle (behind farmer)
+    farmerGraphics.fillStyle(0x8B4513, 1); // Brown handle
+    farmerGraphics.fillRect(38, 15, 4, 35);
+
+    // Axe head
+    farmerGraphics.fillStyle(0x708090, 1); // Steel gray
+    farmerGraphics.fillRect(35, 8, 12, 5); // Top of axe
+    farmerGraphics.fillStyle(0xA9A9A9, 1); // Lighter steel
+    farmerGraphics.fillTriangle(35, 8, 30, 18, 35, 18); // Blade edge
+    farmerGraphics.fillStyle(0x708090, 1);
+    farmerGraphics.fillRect(35, 8, 8, 12); // Axe body
+    // Axe shine
+    farmerGraphics.fillStyle(0xC0C0C0, 1);
+    farmerGraphics.fillRect(36, 10, 2, 8);
+
+    // Head
+    farmerGraphics.fillStyle(0xFFDDB3, 1); // Skin tone
     farmerGraphics.fillCircle(20, 12, 10);
-    farmerGraphics.fillStyle(0x4169E1, 1); // Blue shirt
-    farmerGraphics.fillRect(10, 20, 20, 18);
-    farmerGraphics.fillStyle(0x2F4F4F, 1); // Dark pants
-    farmerGraphics.fillRect(12, 38, 7, 10);
-    farmerGraphics.fillRect(21, 38, 7, 10);
-    farmerGraphics.fillStyle(0x8B0000, 1); // Red hat
-    farmerGraphics.fillRect(12, 5, 16, 8);
-    farmerGraphics.generateTexture('farmer', 40, 50);
+
+    // Eyes
+    farmerGraphics.fillStyle(0x000000, 1);
+    farmerGraphics.fillCircle(17, 10, 2);
+    farmerGraphics.fillCircle(23, 10, 2);
+
+    // Angry eyebrows
+    farmerGraphics.lineStyle(2, 0x000000, 1);
+    farmerGraphics.lineBetween(14, 7, 19, 9);
+    farmerGraphics.lineBetween(26, 7, 21, 9);
+
+    // Mouth (frown)
+    farmerGraphics.lineStyle(2, 0x8B0000, 1);
+    farmerGraphics.lineBetween(17, 16, 23, 16);
+
+    // Straw hat
+    farmerGraphics.fillStyle(0xF4A460, 1); // Sandy brown
+    farmerGraphics.fillRect(8, 2, 24, 6);
+    farmerGraphics.fillStyle(0xDEB887, 1); // Lighter band
+    farmerGraphics.fillRect(12, 0, 16, 5);
+    farmerGraphics.fillStyle(0x8B0000, 1); // Red band
+    farmerGraphics.fillRect(12, 4, 16, 2);
+
+    // Body/overalls
+    farmerGraphics.fillStyle(0x4169E1, 1); // Blue overalls
+    farmerGraphics.fillRect(10, 20, 20, 20);
+    // Overall straps
+    farmerGraphics.fillStyle(0x4169E1, 1);
+    farmerGraphics.fillRect(12, 18, 4, 4);
+    farmerGraphics.fillRect(24, 18, 4, 4);
+    // Overall pocket
+    farmerGraphics.fillStyle(0x3158D0, 1);
+    farmerGraphics.fillRect(15, 28, 10, 8);
+
+    // Arms
+    farmerGraphics.fillStyle(0xFFDDB3, 1); // Skin
+    farmerGraphics.fillRect(5, 22, 6, 12);  // Left arm
+    farmerGraphics.fillRect(29, 22, 6, 12); // Right arm (holding axe)
+
+    // Legs
+    farmerGraphics.fillStyle(0x4169E1, 1); // Blue pants
+    farmerGraphics.fillRect(12, 40, 7, 12);
+    farmerGraphics.fillRect(21, 40, 7, 12);
+
+    // Boots
+    farmerGraphics.fillStyle(0x3D2314, 1); // Dark brown boots
+    farmerGraphics.fillRect(11, 50, 9, 5);
+    farmerGraphics.fillRect(20, 50, 9, 5);
+
+    farmerGraphics.generateTexture('farmer', 55, 55);
     farmerGraphics.destroy();
 
     // Create Hay Bale sprite

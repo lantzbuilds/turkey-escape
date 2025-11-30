@@ -30,7 +30,7 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
     // Set up physics - top-down, no gravity
     this.setCollideWorldBounds(true);
     (this.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
-    this.setSize(30, 30);
+    this.setSize(40, 40);
     this.setScale(1);
 
     // Set up input
