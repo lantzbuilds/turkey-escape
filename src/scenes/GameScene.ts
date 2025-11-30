@@ -42,14 +42,18 @@ export class GameScene extends Phaser.Scene {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
 
-    // Background
-    this.add.rectangle(0, 0, width, height, 0x87CEEB).setOrigin(0);
+    // Background - green grass for top-down barnyard
+    this.add.rectangle(0, 0, width, height, 0x4a7c23).setOrigin(0);
 
-    // Ground
-    const ground = this.add.rectangle(0, height - 50, width, 50, 0x8B7355).setOrigin(0);
-    this.physics.add.existing(ground, true);
+    // Add some visual variety to the ground
+    for (let i = 0; i < 20; i++) {
+      const x = Phaser.Math.Between(0, width);
+      const y = Phaser.Math.Between(0, height);
+      this.add.circle(x, y, Phaser.Math.Between(2, 5), 0x3d6b1c);
+    }
 
-    // Start background music
+    // Stop any existing music and start fresh
+    this.audioManager.stopBackgroundMusic();
     this.audioManager.startBackgroundMusic();
 
     // Create level
@@ -72,12 +76,13 @@ export class GameScene extends Phaser.Scene {
 
   private createLevel(): void {
     const config = this.levelManager.getLevelConfig();
+    const width = this.cameras.main.width;
     const height = this.cameras.main.height;
 
-    // Create turkey
-    this.turkey = new Turkey(this, 100, height - 100);
+    // Create turkey - start on the left side, middle height
+    this.turkey = new Turkey(this, 100, height / 2);
 
-    // Create escape zone
+    // Create escape zone on the right side
     this.escapeZone = this.physics.add.sprite(config.escapeZoneX, height / 2, 'escapeZone');
     this.escapeZone.setImmovable(true);
     (this.escapeZone.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
@@ -101,9 +106,9 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < config.obstacleCount; i++) {
       const type = Phaser.Utils.Array.GetRandom(obstacleTypes);
 
-      // Distribute obstacles across the level
-      const x = 150 + (i * (width - 300) / config.obstacleCount) + Phaser.Math.Between(-30, 30);
-      const y = height - 100;
+      // Distribute obstacles across the playing field (top-down view)
+      const x = 200 + Phaser.Math.Between(0, width - 400);
+      const y = 80 + Phaser.Math.Between(0, height - 160);
 
       const obstacle = new Obstacle(this, x, y, type);
       this.obstacles.push(obstacle);
@@ -121,8 +126,9 @@ export class GameScene extends Phaser.Scene {
     const anticipation = config.level >= 4 ? 0.5 : 0;
 
     for (let i = 0; i < config.farmerCount; i++) {
-      const x = width - 100 - (i * 50);
-      const y = height - 100 - Phaser.Math.Between(0, 50);
+      // Spawn farmers on the right side of the screen, spread vertically
+      const x = width - 100 - Phaser.Math.Between(0, 50);
+      const y = (height / (config.farmerCount + 1)) * (i + 1);
 
       const farmer = new Farmer(this, x, y, config.farmerSpeed, anticipation);
       farmer.setTarget(this.turkey);
@@ -212,8 +218,8 @@ export class GameScene extends Phaser.Scene {
     if (this.lives <= 0) {
       this.gameOver();
     } else {
-      // Respawn turkey at start
-      this.turkey.setPosition(100, this.cameras.main.height - 100);
+      // Respawn turkey at start (left side, center)
+      this.turkey.setPosition(100, this.cameras.main.height / 2);
       this.turkey.setVelocity(0, 0);
 
       // Invincibility period

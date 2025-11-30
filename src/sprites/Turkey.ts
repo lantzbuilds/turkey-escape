@@ -4,9 +4,10 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd: { [key: string]: Phaser.Input.Keyboard.Key };
   private spaceKey: Phaser.Input.Keyboard.Key;
-  private isJumping = false;
-  private moveSpeed = 160;
-  private jumpPower = 350;
+  private moveSpeed = 200;
+  private dashSpeed = 400;
+  private isDashing = false;
+  private dashCooldown = false;
   private dustEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private featherEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
 
@@ -16,9 +17,9 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Set up physics
+    // Set up physics - top-down, no gravity
     this.setCollideWorldBounds(true);
-    this.setGravityY(800);
+    (this.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
     this.setSize(30, 30);
     this.setScale(1);
 
@@ -66,51 +67,87 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
   update(): void {
     if (!this.body) return;
 
-    const onGround = (this.body as Phaser.Physics.Arcade.Body).touching.down;
+    // Don't allow movement while dashing
+    if (this.isDashing) return;
+
+    const speed = this.moveSpeed;
+    let velocityX = 0;
+    let velocityY = 0;
 
     // Horizontal movement
     if (this.cursors.left.isDown || this.wasd.left.isDown) {
-      this.setVelocityX(-this.moveSpeed);
+      velocityX = -speed;
       this.setFlipX(true);
-      if (onGround) {
-        this.dustEmitter?.start();
-        this.dustEmitter?.setPosition(this.x, this.y + 15);
-      }
     } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-      this.setVelocityX(this.moveSpeed);
+      velocityX = speed;
       this.setFlipX(false);
-      if (onGround) {
-        this.dustEmitter?.start();
-        this.dustEmitter?.setPosition(this.x, this.y + 15);
-      }
-    } else {
-      this.setVelocityX(0);
-      this.dustEmitter?.stop();
     }
 
-    // Jumping
-    if (onGround) {
-      this.isJumping = false;
-      if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
-        this.jump();
-      }
-    } else {
-      this.dustEmitter?.stop();
+    // Vertical movement
+    if (this.cursors.up.isDown || this.wasd.up.isDown) {
+      velocityY = -speed;
+    } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+      velocityY = speed;
     }
 
-    // Update particle positions
-    if (this.body.velocity.x !== 0 && onGround) {
+    // Normalize diagonal movement
+    if (velocityX !== 0 && velocityY !== 0) {
+      velocityX *= 0.707;
+      velocityY *= 0.707;
+    }
+
+    this.setVelocity(velocityX, velocityY);
+
+    // Dust particles when moving
+    if (velocityX !== 0 || velocityY !== 0) {
+      this.dustEmitter?.start();
       this.dustEmitter?.setPosition(this.x, this.y + 15);
+    } else {
+      this.dustEmitter?.stop();
+    }
+
+    // Dash with spacebar
+    if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && !this.dashCooldown) {
+      this.dash();
     }
   }
 
-  jump(): void {
-    if (!this.isJumping) {
-      this.setVelocityY(-this.jumpPower);
-      this.isJumping = true;
-      // Play jump sound via scene
-      (this.scene as any).audioManager?.playJump();
+  dash(): void {
+    if (this.dashCooldown) return;
+
+    // Get current movement direction or default to facing direction
+    let dashX = this.body!.velocity.x;
+    let dashY = this.body!.velocity.y;
+
+    // If not moving, dash in facing direction
+    if (dashX === 0 && dashY === 0) {
+      dashX = this.flipX ? -1 : 1;
+      dashY = 0;
     }
+
+    // Normalize and apply dash speed
+    const magnitude = Math.sqrt(dashX * dashX + dashY * dashY);
+    if (magnitude > 0) {
+      dashX = (dashX / magnitude) * this.dashSpeed;
+      dashY = (dashY / magnitude) * this.dashSpeed;
+    }
+
+    this.isDashing = true;
+    this.dashCooldown = true;
+    this.setVelocity(dashX, dashY);
+
+    // Play dash sound
+    (this.scene as any).audioManager?.playJump();
+
+    // End dash after short duration
+    this.scene.time.delayedCall(150, () => {
+      this.isDashing = false;
+    });
+
+    // Cooldown before next dash
+    this.scene.time.delayedCall(500, () => {
+      this.dashCooldown = false;
+    });
   }
 
   playHitEffect(): void {

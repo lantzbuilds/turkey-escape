@@ -14,6 +14,7 @@ export class Farmer extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
 
     this.setCollideWorldBounds(true);
+    (this.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
     this.setSize(30, 30);
     this.setScale(1);
     this.speed = speed;

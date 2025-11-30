@@ -5,6 +5,8 @@ export class AudioManager {
   private sfxVolume = 0.7;
   private backgroundMusicNode: OscillatorNode | null = null;
   private backgroundMusicGain: GainNode | null = null;
+  private musicInterval: ReturnType<typeof setInterval> | null = null;
+  private isPlaying = false;
 
   constructor() {
     // Initialize AudioContext on first user interaction
@@ -126,32 +128,18 @@ export class AudioManager {
   }
 
   startBackgroundMusic(): void {
-    if (this.backgroundMusicNode) return;
+    // Stop any existing music first
+    this.stopBackgroundMusic();
+
+    // Prevent multiple starts
+    if (this.isPlaying) return;
+    this.isPlaying = true;
 
     const ctx = this.ensureAudioContext();
 
     // Create a simple melodic loop
     const melodyNotes = [262, 294, 330, 349, 392, 349, 330, 294]; // C D E F G F E D
     let noteIndex = 0;
-
-    const playNote = () => {
-      if (!this.backgroundMusicNode) return;
-
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-
-      oscillator.connect(gainNode);
-      gainNode.connect(this.backgroundMusicGain!);
-
-      oscillator.frequency.value = melodyNotes[noteIndex];
-      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
-
-      noteIndex = (noteIndex + 1) % melodyNotes.length;
-    };
 
     // Create master gain for background music
     this.backgroundMusicGain = ctx.createGain();
@@ -163,10 +151,32 @@ export class AudioManager {
     this.backgroundMusicNode.frequency.value = 0;
     this.backgroundMusicNode.start();
 
+    const playNote = () => {
+      if (!this.isPlaying || !this.backgroundMusicGain) return;
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(this.backgroundMusicGain);
+
+      oscillator.frequency.value = melodyNotes[noteIndex];
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
+
+      noteIndex = (noteIndex + 1) % melodyNotes.length;
+    };
+
     // Play notes at intervals
-    const musicInterval = setInterval(() => {
-      if (!this.backgroundMusicNode) {
-        clearInterval(musicInterval);
+    this.musicInterval = setInterval(() => {
+      if (!this.isPlaying) {
+        if (this.musicInterval) {
+          clearInterval(this.musicInterval);
+          this.musicInterval = null;
+        }
         return;
       }
       playNote();
@@ -174,10 +184,22 @@ export class AudioManager {
   }
 
   stopBackgroundMusic(): void {
+    this.isPlaying = false;
+
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
+    }
+
     if (this.backgroundMusicNode) {
-      this.backgroundMusicNode.stop();
+      try {
+        this.backgroundMusicNode.stop();
+      } catch (e) {
+        // Already stopped
+      }
       this.backgroundMusicNode = null;
     }
+
     if (this.backgroundMusicGain) {
       this.backgroundMusicGain.disconnect();
       this.backgroundMusicGain = null;
