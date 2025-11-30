@@ -1,3 +1,6 @@
+// Singleton AudioManager to prevent multiple music instances
+let instance: AudioManager | null = null;
+
 export class AudioManager {
   private audioContext: AudioContext | null = null;
   private masterVolume = 0.3;
@@ -9,6 +12,12 @@ export class AudioManager {
   private isPlaying = false;
 
   constructor() {
+    // Return existing instance if already created (singleton pattern)
+    if (instance) {
+      return instance;
+    }
+    instance = this;
+
     // Initialize AudioContext on first user interaction
     if (typeof window !== 'undefined') {
       window.addEventListener('click', () => this.initAudioContext(), { once: true });
