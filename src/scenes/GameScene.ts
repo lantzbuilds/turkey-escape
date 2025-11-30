@@ -1,9 +1,12 @@
 import Phaser from 'phaser';
-import { Turkey } from '../sprites/Turkey';
+import { Turkey, TouchInput } from '../sprites/Turkey';
 import { Farmer } from '../sprites/Farmer';
 import { Obstacle, ObstacleType } from '../objects/Obstacle';
 import { LevelManager } from '../utils/LevelManager';
 import { AudioManager } from '../utils/AudioManager';
+import { VirtualJoystick } from '../ui/VirtualJoystick';
+import { TouchButton } from '../ui/TouchButton';
+import { isMobile } from '../utils/MobileDetect';
 
 export class GameScene extends Phaser.Scene {
   private turkey!: Turkey;
@@ -23,6 +26,13 @@ export class GameScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private highScoreText!: Phaser.GameObjects.Text;
 
+  // Mobile controls
+  private virtualJoystick: VirtualJoystick | null = null;
+  private dashButton: TouchButton | null = null;
+  private pauseButton!: TouchButton;
+  private isMobileDevice = false;
+  private escKey!: Phaser.Input.Keyboard.Key;
+
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -36,6 +46,7 @@ export class GameScene extends Phaser.Scene {
     this.isInvincible = false;
     this.farmers = [];
     this.obstacles = [];
+    this.isMobileDevice = isMobile();
   }
 
   create(): void {
@@ -72,6 +83,58 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(300, () => {
       this.audioManager.playGobble();
     });
+
+    // Set up mobile controls if on mobile
+    this.setupMobileControls();
+
+    // Set up pause button (always visible)
+    this.setupPauseButton();
+
+    // Set up ESC key for pause
+    this.escKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+  }
+
+  private setupMobileControls(): void {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    if (this.isMobileDevice) {
+      // Virtual joystick (appears on touch in left half of screen)
+      this.virtualJoystick = new VirtualJoystick(this);
+
+      // Dash button (bottom right)
+      this.dashButton = new TouchButton(
+        this,
+        width - 80,
+        height - 80,
+        45,
+        'DASH',
+        0x44aa44
+      );
+    }
+  }
+
+  private setupPauseButton(): void {
+    const width = this.cameras.main.width;
+
+    // Pause button (top right, always visible)
+    this.pauseButton = new TouchButton(
+      this,
+      width - 40,
+      40,
+      25,
+      '⏸',
+      0x666666
+    );
+
+    this.pauseButton.onPress(() => {
+      this.pauseGame();
+    });
+  }
+
+  private pauseGame(): void {
+    this.scene.pause();
+    this.scene.launch('PauseScene');
   }
 
   private createLevel(): void {
@@ -300,6 +363,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
+    // Check for pause (ESC key)
+    if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
+      this.pauseGame();
+      return;
+    }
+
+    // Build touch input from mobile controls
+    if (this.isMobileDevice && this.virtualJoystick) {
+      const joystickOutput = this.virtualJoystick.output;
+      const touchInput: TouchInput = {
+        x: joystickOutput.x,
+        y: joystickOutput.y,
+        isActive: joystickOutput.isActive,
+        dashPressed: this.dashButton?.justPressed() || false
+      };
+      this.turkey.setTouchInput(touchInput);
+    }
+
     // Update turkey
     this.turkey.update();
 
@@ -315,5 +396,12 @@ export class GameScene extends Phaser.Scene {
     if (this.turkey.y > this.cameras.main.height + 100) {
       this.handleFarmerCatch();
     }
+  }
+
+  shutdown(): void {
+    // Clean up mobile controls
+    this.virtualJoystick?.destroy();
+    this.dashButton?.destroy();
+    this.pauseButton?.destroy();
   }
 }

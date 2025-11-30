@@ -1,5 +1,12 @@
 import Phaser from 'phaser';
 
+export interface TouchInput {
+  x: number;  // -1 to 1
+  y: number;  // -1 to 1
+  isActive: boolean;
+  dashPressed: boolean;
+}
+
 export class Turkey extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd: { [key: string]: Phaser.Input.Keyboard.Key };
@@ -10,6 +17,9 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
   private dashCooldown = false;
   private dustEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
   private featherEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+
+  // External touch input
+  private touchInput: TouchInput | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, 'turkey');
@@ -64,6 +74,10 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  setTouchInput(input: TouchInput): void {
+    this.touchInput = input;
+  }
+
   update(): void {
     if (!this.body) return;
 
@@ -74,26 +88,35 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
     let velocityX = 0;
     let velocityY = 0;
 
-    // Horizontal movement
-    if (this.cursors.left.isDown || this.wasd.left.isDown) {
-      velocityX = -speed;
-      this.setFlipX(true);
-    } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-      velocityX = speed;
-      this.setFlipX(false);
-    }
+    // Check touch input first (from virtual joystick)
+    if (this.touchInput?.isActive) {
+      velocityX = this.touchInput.x * speed;
+      velocityY = this.touchInput.y * speed;
+      if (velocityX < 0) this.setFlipX(true);
+      else if (velocityX > 0) this.setFlipX(false);
+    } else {
+      // Keyboard input
+      // Horizontal movement
+      if (this.cursors.left.isDown || this.wasd.left.isDown) {
+        velocityX = -speed;
+        this.setFlipX(true);
+      } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+        velocityX = speed;
+        this.setFlipX(false);
+      }
 
-    // Vertical movement
-    if (this.cursors.up.isDown || this.wasd.up.isDown) {
-      velocityY = -speed;
-    } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
-      velocityY = speed;
-    }
+      // Vertical movement
+      if (this.cursors.up.isDown || this.wasd.up.isDown) {
+        velocityY = -speed;
+      } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+        velocityY = speed;
+      }
 
-    // Normalize diagonal movement
-    if (velocityX !== 0 && velocityY !== 0) {
-      velocityX *= 0.707;
-      velocityY *= 0.707;
+      // Normalize diagonal movement for keyboard
+      if (velocityX !== 0 && velocityY !== 0) {
+        velocityX *= 0.707;
+        velocityY *= 0.707;
+      }
     }
 
     this.setVelocity(velocityX, velocityY);
@@ -106,8 +129,10 @@ export class Turkey extends Phaser.Physics.Arcade.Sprite {
       this.dustEmitter?.stop();
     }
 
-    // Dash with spacebar
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey) && !this.dashCooldown) {
+    // Dash with spacebar or touch button
+    const keyboardDash = Phaser.Input.Keyboard.JustDown(this.spaceKey);
+    const touchDash = this.touchInput?.dashPressed;
+    if ((keyboardDash || touchDash) && !this.dashCooldown) {
       this.dash();
     }
   }
