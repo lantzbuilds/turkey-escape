@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 
 export class TouchButton {
-  private scene: Phaser.Scene;
   private button: Phaser.GameObjects.Container;
   private circle: Phaser.GameObjects.Arc;
   private label: Phaser.GameObjects.Text;
@@ -17,7 +16,6 @@ export class TouchButton {
     text: string,
     color: number = 0x4444aa
   ) {
-    this.scene = scene;
 
     // Create button circle
     this.circle = scene.add.circle(0, 0, radius, color, 0.6);

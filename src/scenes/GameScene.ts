@@ -139,7 +139,6 @@ export class GameScene extends Phaser.Scene {
 
   private createLevel(): void {
     const config = this.levelManager.getLevelConfig();
-    const width = this.cameras.main.width;
     const height = this.cameras.main.height;
 
     // Create turkey - start on the left side, middle height
