@@ -42,8 +42,8 @@ export class MenuScene extends Phaser.Scene {
 
     // Subtitle
     this.add
-      .text(width / 2, height / 2, "Help the turkey escape the barnyard!", {
-        fontSize: "20px",
+      .text(width / 2, height / 3 + 50, "Help the turkey escape the barnyard!", {
+        fontSize: "18px",
         fontFamily: "monospace",
         color: "#ffffff",
         stroke: "#000000",
@@ -67,10 +67,11 @@ export class MenuScene extends Phaser.Scene {
           "Reach the Green Escape Zone!",
         ];
 
+    const instructionsStartY = height / 3 + 85;
     instructions.forEach((text, index) => {
       this.add
-        .text(width / 2, height / 2 + 60 + index * 25, text, {
-          fontSize: "16px",
+        .text(width / 2, instructionsStartY + index * 22, text, {
+          fontSize: "14px",
           fontFamily: "monospace",
           color: "#ffff00",
           stroke: "#000000",
@@ -83,7 +84,7 @@ export class MenuScene extends Phaser.Scene {
     const highScore = this.levelManager.getHighScore();
     if (highScore > 0) {
       this.add
-        .text(width / 2, height - 150, `High Score: ${highScore}`, {
+        .text(width / 2, height - 130, `High Score: ${highScore}`, {
           fontSize: "24px",
           fontFamily: "monospace",
           color: "#FFD700",
@@ -96,7 +97,7 @@ export class MenuScene extends Phaser.Scene {
     // Start prompt/button
     const startText = this.add.text(
       width / 2,
-      height - 80,
+      height - 70,
       isMobileDevice ? "TAP TO START" : "Press SPACE to Start",
       {
         fontSize: "28px",
