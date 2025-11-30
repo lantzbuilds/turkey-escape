@@ -146,9 +146,27 @@ export class AudioManager {
 
     const ctx = this.ensureAudioContext();
 
-    // Create a simple melodic loop
-    const melodyNotes = [262, 294, 330, 349, 392, 349, 330, 294]; // C D E F G F E D
-    let noteIndex = 0;
+    // Melody notes (higher voice) - a fun, bouncy 8-bit tune in C major
+    // Two bars of melody that create a chase/escape feeling
+    const melodyNotes = [
+      392, 440, 494, 523,  // G A B C (ascending run)
+      494, 440, 392, 330,  // B A G E (descending)
+      349, 392, 440, 392,  // F G A G (bounce)
+      330, 294, 330, 392,  // E D E G (resolve up)
+    ];
+
+    // Bass notes (lower voice) - root notes, one octave higher for clarity
+    // Each bass note plays for 2 melody notes
+    const bassNotes = [
+      262, 262,  // C3
+      220, 220,  // A2
+      233, 233,  // Bb2
+      262, 294,  // C3, D3
+    ];
+
+    let melodyIndex = 0;
+    let bassIndex = 0;
+    let beatCount = 0;
 
     // Create master gain for background music
     this.backgroundMusicGain = ctx.createGain();
@@ -160,23 +178,48 @@ export class AudioManager {
     this.backgroundMusicNode.frequency.value = 0;
     this.backgroundMusicNode.start();
 
-    const playNote = () => {
+    const playMelody = () => {
       if (!this.isPlaying || !this.backgroundMusicGain) return;
 
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+      // Melody voice - square wave for that classic 8-bit sound
+      const melodyOsc = ctx.createOscillator();
+      const melodyGain = ctx.createGain();
 
-      oscillator.connect(gainNode);
-      gainNode.connect(this.backgroundMusicGain);
+      melodyOsc.type = 'square';
+      melodyOsc.connect(melodyGain);
+      melodyGain.connect(this.backgroundMusicGain);
 
-      oscillator.frequency.value = melodyNotes[noteIndex];
-      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      melodyOsc.frequency.value = melodyNotes[melodyIndex];
+      melodyGain.gain.setValueAtTime(0.08, ctx.currentTime);
+      melodyGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
 
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.3);
+      melodyOsc.start(ctx.currentTime);
+      melodyOsc.stop(ctx.currentTime + 0.15);
 
-      noteIndex = (noteIndex + 1) % melodyNotes.length;
+      melodyIndex = (melodyIndex + 1) % melodyNotes.length;
+    };
+
+    const playBass = () => {
+      if (!this.isPlaying || !this.backgroundMusicGain) return;
+
+      // Bass voice - sawtooth wave for a punchy, audible bass
+      const bassOsc = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+
+      bassOsc.type = 'sawtooth';
+      bassOsc.connect(bassGain);
+      bassGain.connect(this.backgroundMusicGain);
+
+      bassOsc.frequency.value = bassNotes[bassIndex];
+      // Louder attack, longer sustain for bass
+      bassGain.gain.setValueAtTime(0.15, ctx.currentTime);
+      bassGain.gain.setValueAtTime(0.12, ctx.currentTime + 0.05);
+      bassGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.28);
+
+      bassOsc.start(ctx.currentTime);
+      bassOsc.stop(ctx.currentTime + 0.28);
+
+      bassIndex = (bassIndex + 1) % bassNotes.length;
     };
 
     // Play notes at intervals
@@ -188,8 +231,17 @@ export class AudioManager {
         }
         return;
       }
-      playNote();
-    }, 300);
+
+      // Play melody every beat
+      playMelody();
+
+      // Play bass every 2 beats
+      if (beatCount % 2 === 0) {
+        playBass();
+      }
+
+      beatCount++;
+    }, 150); // Faster tempo for more energy
   }
 
   stopBackgroundMusic(): void {
