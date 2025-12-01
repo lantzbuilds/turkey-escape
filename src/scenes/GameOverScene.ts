@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { LevelManager } from '../utils/LevelManager';
+import { isMobile } from '../utils/MobileDetect';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -9,6 +10,7 @@ export class GameOverScene extends Phaser.Scene {
   create(data: { score: number; level: number; levelManager: LevelManager }): void {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
+    const isMobileDevice = isMobile();
 
     const { score, level, levelManager } = data;
 
@@ -90,25 +92,65 @@ export class GameOverScene extends Phaser.Scene {
       });
     }
 
-    // Retry prompt
-    const retryText = this.add.text(width / 2, height - 120, 'Press SPACE to Retry', {
-      fontSize: '24px',
-      fontFamily: 'monospace',
-      color: '#32CD32',
-      stroke: '#000000',
-      strokeThickness: 3
-    });
+    // Retry prompt/button
+    const retryText = this.add.text(
+      width / 2,
+      height - 120,
+      isMobileDevice ? 'TAP TO RETRY' : 'Press SPACE to Retry',
+      {
+        fontSize: '24px',
+        fontFamily: 'monospace',
+        color: '#32CD32',
+        stroke: '#000000',
+        strokeThickness: 3,
+        backgroundColor: isMobileDevice ? '#226622' : undefined,
+        padding: isMobileDevice ? { x: 20, y: 10 } : undefined
+      }
+    );
     retryText.setOrigin(0.5);
 
-    // Menu prompt
-    const menuText = this.add.text(width / 2, height - 80, 'Press ESC for Menu', {
-      fontSize: '20px',
-      fontFamily: 'monospace',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 2
+    // Make retry interactive for touch/click
+    retryText.setInteractive({ useHandCursor: true });
+    retryText.on('pointerdown', () => {
+      levelManager.resetScore();
+      this.scene.start('GameScene', { levelManager });
     });
+    retryText.on('pointerover', () => {
+      retryText.setStyle({ color: '#50FF50' });
+    });
+    retryText.on('pointerout', () => {
+      retryText.setStyle({ color: '#32CD32' });
+    });
+
+    // Menu prompt/button
+    const menuText = this.add.text(
+      width / 2,
+      height - 60,
+      isMobileDevice ? 'TAP FOR MENU' : 'Press ESC for Menu',
+      {
+        fontSize: '20px',
+        fontFamily: 'monospace',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 2,
+        backgroundColor: isMobileDevice ? '#444444' : undefined,
+        padding: isMobileDevice ? { x: 15, y: 8 } : undefined
+      }
+    );
     menuText.setOrigin(0.5);
+
+    // Make menu interactive for touch/click
+    menuText.setInteractive({ useHandCursor: true });
+    menuText.on('pointerdown', () => {
+      levelManager.resetScore();
+      this.scene.start('MenuScene');
+    });
+    menuText.on('pointerover', () => {
+      menuText.setStyle({ color: '#cccccc' });
+    });
+    menuText.on('pointerout', () => {
+      menuText.setStyle({ color: '#ffffff' });
+    });
 
     // Blinking effect
     this.tweens.add({
@@ -120,7 +162,7 @@ export class GameOverScene extends Phaser.Scene {
       ease: 'Sine.easeInOut'
     });
 
-    // Input handlers
+    // Keyboard input handlers (still work on desktop)
     this.input.keyboard!.once('keydown-SPACE', () => {
       levelManager.resetScore();
       this.scene.start('GameScene', { levelManager });
